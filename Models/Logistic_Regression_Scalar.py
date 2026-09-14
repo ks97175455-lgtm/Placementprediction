@@ -1,0 +1,18 @@
+"""Logistic Regression with StandardScaler for numeric placement features."""
+import os,pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder,StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+df=pd.read_csv(os.path.join(ROOT,"datasets","placement_predict_50k Dataset.csv"))
+y=df["PlacementStatus"].astype(int)
+X=df.drop(columns=["StudentID","PlacementStatus","Salary Package","IsAnomaly"])
+num=X.select_dtypes("number").columns; cat=X.select_dtypes(exclude="number").columns
+prep=ColumnTransformer([("num",Pipeline([("imp",SimpleImputer(strategy="median")),("scale",StandardScaler())]),num),("cat",Pipeline([("imp",SimpleImputer(strategy="most_frequent")),("oh",OneHotEncoder(handle_unknown="ignore"))]),cat)])
+model=Pipeline([("prep",prep),("clf",LogisticRegression(max_iter=1000,solver="liblinear"))])
+Xtr,Xte,ytr,yte=train_test_split(X,y,test_size=.2,random_state=42,stratify=y)
+model.fit(Xtr,ytr); print("Accuracy:",accuracy_score(yte,model.predict(Xte)))
